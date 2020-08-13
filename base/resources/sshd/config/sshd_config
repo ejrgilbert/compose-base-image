@@ -1,0 +1,8 @@
+UseDNS no
+Protocol 2
+SyslogFacility AUTHPRIV
+AuthorizedKeysFile %h/.ssh/authorized_keys
+PasswordAuthentication no
+ChallengeResponseAuthentication no
+X11Forwarding yes
+Subsystem sfto /usr/lib/openssh/sftp-server
