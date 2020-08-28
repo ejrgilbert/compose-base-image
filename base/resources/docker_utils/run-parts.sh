@@ -7,9 +7,4 @@ if [[ -d "$DIR" ]]; then
   /bin/run-parts "$DIR"
 fi
 
-if [ -z "$1" ]; then
-  echo "Specify command to run."
-  exit 1
-fi
-
-exec "$*"
+exit $?

@@ -7,6 +7,8 @@ declare -A USERS=(
     ["accumulo"]="/opt/accumulo"
     ["hdfs"]="/opt/hadoop"
     ["zookeeper"]="/usr/lib/zookeeper"
+    ["yarn"]="/var/lib/hadoop-yarn"
+    ["mapred"]="/var/lib/hadoop-mapreduce"
 )
 
 authorized_keys_loc="/tmp/authorized_keys"
@@ -22,11 +24,10 @@ for user in "${!USERS[@]}"; do
 
     su -  "${user}" -c "mkdir ~/.ssh"
     su -  "${user}" -c "ssh-keygen -f ~/.ssh/id_rsa -q -N \"\""
-    su -  "${user}" -c "cat ~/.ssh/id_rsa.pub >${authorized_keys_loc}"
+    su -  "${user}" -c "cat ~/.ssh/id_rsa.pub >>${authorized_keys_loc}"
     su -  "${user}" -c "chmod 700 ~/.ssh"
     su -  "${user}" -c "chmod 644 ~/.ssh/id_rsa.pub"
     su -  "${user}" -c "chmod 600 ~/.ssh/id_rsa"
-    su -  "${user}" -c "echo \"* \" >~/.ssh/known_hosts"
 done
 
 for user in "${!USERS[@]}"; do
@@ -38,7 +39,9 @@ for user in "${!USERS[@]}"; do
     chmod 640 "${home_dir}/.ssh/authorized_keys"
 
     # enable localhost ssh for each user
+    su -  "${user}" -c "printf \"* \" >>${home_dir}/.ssh/known_hosts"
     cat /etc/ssh/ssh_host_rsa_key.pub >>"${home_dir}/.ssh/known_hosts"
+    su -  "${user}" -c "printf \"* \" >>${home_dir}/.ssh/known_hosts"
     cat /etc/ssh/ssh_host_dsa_key.pub >>"${home_dir}/.ssh/known_hosts"
 done
 rm "${authorized_keys_loc}"

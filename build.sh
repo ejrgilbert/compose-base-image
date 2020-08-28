@@ -1,21 +1,23 @@
 #!/bin/bash
 
+THIS_DIR=$(dirname "$(realpath $0)")
+
 # NOTE: REGISTRY_URL is used to specify where to push the built images...must have trailing '/'
-source ./util/logging.sh
+source ${THIS_DIR}/util/logging.sh
 
 BASE="base"
 HELP="help"
 
+DEFAULT_VERSION="1.0.0"
+
 header "Docker Build Utility"
 
 function usage() {
-    echo "Usage: $0 [-v ver1 ver2 ...] [-p] -- (${BASE} | ${HELP})"
-    echo -e "\t${BASE} - if you would like to build the base compose docker image"
+    echo "Usage: $0 [-v|--version ver1 ver2 ...] [-p|--push] [${HELP}]"
     echo -e "\t${HELP} - to see this message"
     echo "Options:"
     echo -e "\t-v - What versions to tag the images as"
-    echo -e "\t-p - Pass this option if you want to push to the REGISTRY...MUST HAVE -v IF USING THIS OPTION"
-    note "Make sure you  pass the '--' if you use any of the above options (-v parsing causes this)"
+    echo -e "\t-p - Pass this option if you want to push to the REGISTRY"
     exit 1
 }
 
@@ -26,7 +28,7 @@ function build_failed() {
 function build_base() {
     info "Building ${BASE} docker image"
 
-    if ! docker build -t ${BASE} ./${BASE}; then
+    if ! docker build -t ${BASE} ${THIS_DIR}/${BASE}; then
         build_failed ${BASE}
     fi
     success "Completed building ${BASE} docker image"
@@ -48,45 +50,43 @@ function push_images() {
     success "Completed pushing docker images"
 }
 
-while getopts 'v:p' opt
-do
-    case "${opt}" in
-        v )
-            IMAGE_VERSIONS+=("$OPTARG")
-            while [ "$OPTIND" -le "$#" ] && [ "${!OPTIND:0:1}" != "-" ]; do
-                IMAGE_VERSIONS+=("${!OPTIND}")
-                OPTIND="$(( OPTIND + 1 ))"
+if [[ $* =~ ${HELP} ]]; then
+    usage
+fi
+
+# From: https://medium.com/@Drew_Stokes/bash-argument-parsing-54f3b81a6a8f
+while (( "$#" )); do
+    case "$1" in
+        -v|--version )
+            if [ -z "$2" ]; then
+                error_exit "Argument required for $1"
+            fi
+            shift 1
+
+            while [ -n "$1" ] && [ "${1:0:1}" != "-" ]; do
+                IMAGE_VERSIONS+=("$1")
+                shift 1
             done
             ;;
-        p )
+        -p|--push )
             PUSH="true"
             ;;
-        ? )
+        -? )
             usage
             ;;
-        * )
-            usage
+        -*|--*=) # unsupported flags
+            error_exit "Unsupported flag $1"
+            ;;
+        *)
+            error_exit "Unsupported positional argument: $1"
             ;;
     esac
 done
-shift $(( OPTIND - 1 ))
 
-if [[ "${PUSH}" == "true" && -z ${IMAGE_VERSIONS[*]} ]]; then
-    error_exit "The push (-p) option must be paired with tag versions (-v)"
-fi
+build_base
 
-case $1 in
-    ${BASE} )
-        build_base
-        ;;
-    ${HELP} )
-        usage
-        ;;
-    * )
-        usage
-        ;;
-esac
-
+# Set one image version as the default image version
+IMAGE_VERSIONS+=( "${DEFAULT_VERSION}" )
 if [[ -n ${IMAGE_VERSIONS[*]} ]]; then
     tag_images
 fi

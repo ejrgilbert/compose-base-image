@@ -1,5 +1,0 @@
-#!/bin/bash
-
-echo Welcome to the compose-base-image
-logger Starting runit 1
-echo Welcome to the compose-base-image > /dev/console

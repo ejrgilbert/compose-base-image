@@ -4,8 +4,8 @@ This repo houses the code for the Datawave Docker-Compose Base Image. The
 image created here isn't meant to be run on its own, it's meant to be
 extended for running various components of the Datawave software stack.
 
-The image contains the `runit` tool for running `sshd` as a service on
-docker container startup.
+The image will start sshd in the foreground by default. It also creates an
+entrypoint.d script for starting up with run-parts in image extensions.
 
 We have added the `accumulo`, `datawave`, `hadoop`, and `zookeeper` users
 with their own `ssh`keys. The `root` user also has its own `ssh` key which
